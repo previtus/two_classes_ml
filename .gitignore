@@ -166,4 +166,5 @@ venv.bak/
 *.npy
 *.mp4
 *.desktop
-
+*.h5
+*.pdf
