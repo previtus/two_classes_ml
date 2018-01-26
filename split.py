@@ -25,7 +25,7 @@ def copy_files(files, path_to_files, target_folder):
         shutil.copyfile(source, destination)
 
 
-def twofolders2fourfolders(firstclassfolder, secondclassfolder, train_test_split=0.3):
+def twofolders2fourfolders(firstclassfolder, secondclassfolder, train_test_split=0.3, enforce_same_number=False):
     '''
     processes two classes in two folders into training and testing subsets and accordingly into four folders
 
@@ -39,6 +39,13 @@ def twofolders2fourfolders(firstclassfolder, secondclassfolder, train_test_split
     files_first = sorted(os.listdir(firstclassfolder))
     files_second = sorted(os.listdir(secondclassfolder))
 
+    if enforce_same_number:
+        np.random.shuffle(files_first)
+        np.random.shuffle(files_second)
+
+        min_i = np.min([len(files_first), len(files_second)])
+        files_first = files_first[0:min_i]
+        files_second = files_second[0:min_i]
 
     print("path_first:", path_first)
 
