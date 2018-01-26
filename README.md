@@ -18,7 +18,7 @@ Prepare your dataset, get same size images from two classes and put them into tw
 
 As an example I took images from dogs and cats Kaggle dataset, 2000 of examples per class for training, 400 examples per class for validation.
 
-I run both classifiers for 100 epochs and here are the plots:
+Here are the plots from both classifiers:
 
 ![Plot image](https://github.com/previtus/two_classes_ml/blob/master/example_plots/2400catsanddogs-classifier1_100epochs.png)  |  ![Plot image](https://github.com/previtus/two_classes_ml/blob/master/example_plots/2400catsanddogs-classifier2_50epochs.png)
 -------------------------------------------------- | --------------------------------------------------
