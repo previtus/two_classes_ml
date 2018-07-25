@@ -2,11 +2,13 @@
 
 img_size = None #(20,20)
 img_size = (150,150)
-epochs = 200
+epochs = 100
 batch_size = 16
 
 # 4-folds: train 2211 , test 737
 # 3-folds: train 1965 , test 983
+# 10-folds: train 2653 , test 295
+
 k_folds = 3
 
 #(instead of)validation_split = 0.3
@@ -21,6 +23,11 @@ RESCALE = 1. / 255 # put data from 0-255 into 0-1
 # define the classes in here directly
 
 FOLDER = 'saved_images_square_224'
+#FOLDER = 'saved_images_square_224_cutandstretchednozeros'
+#FOLDER = 'saved_images_square_224_stretched'
+#specialname = 'cutnstretchNozeros'
+#specialname = 'stretchedNocut'
+specialname = '__retest'
 #FOLDER = 'saved_images_square_20'
 
 classes_names = ['lp', 'tc', 'tr', 'vt']
@@ -94,12 +101,27 @@ if VIZ:
 
 # NOW WE HAVE ALL THE DATA X AND THEIR LABELS Y IN X_all_image_data, Y_all_labels
 def shuffle_two_lists_together(a,b, SEED=None):
-    combined = list(zip(a, b))
     if SEED is not None:
         random.seed(SEED)
-    random.shuffle(combined)
-    a[:], b[:] = zip(*combined)
-    return a,b
+
+    #sort_order = random.sample(range(len(a)), len(a))
+
+    sort_order = list(range(0,len(a)))
+    random.shuffle(sort_order)
+
+    a_new = [a[i] for i in sort_order]
+    b_new = [b[i] for i in sort_order]
+    a_new = np.asarray(a_new)
+    b_new = np.asarray(b_new)
+    return a_new, b_new
+
+#def shuffle_two_lists_together(a,b, SEED=None):
+#    combined = list(zip(a, b))
+#    if SEED is not None:
+#        random.seed(SEED)
+#    random.shuffle(combined)
+#    a[:], b[:] = zip(*combined)
+#    return a,b
 
 def split_data(x,y,validation_split=0.2):
     split_at = int(len(x) * (1 - validation_split))
@@ -300,5 +322,5 @@ from visualize_history import visualize_histories, visualize_special_histories
 #visualize_histories(HISTORIES, show_also='acc', save=True, save_path='classifier3b_'+str(epochs)+'epochs_'+str(k_folds)+'folds_')
 
 # def visualize_special_histories(histories, plotvalues='loss', show=True, save=False, save_path='', custom_title=None, just_val=False):
-visualize_special_histories(HISTORIES, plotvalues='acc', save=True, save_path='classifier3b_'+str(epochs)+'epochs_'+str(k_folds)+'folds_')
+visualize_special_histories(HISTORIES, plotvalues='acc', save=True, save_path='classifier3b_'+str(epochs)+'epochs_'+str(k_folds)+'folds_'+specialname)
 

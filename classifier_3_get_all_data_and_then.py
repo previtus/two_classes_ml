@@ -27,7 +27,7 @@ folders = ['data/'+FOLDER+'/train/lp/', 'data/'+FOLDER+'/train/tc/', 'data/'+FOL
 labels_texts = classes_names+classes_names
 labels = [0, 1, 2, 3, 0, 1, 2, 3]
 
-SHUFFLE_SEED=13
+SHUFFLE_SEED=None
 
 
 ############ Whats bellow doesn't have to be changed dramatically
@@ -89,12 +89,27 @@ if VIZ:
 
 # NOW WE HAVE ALL THE DATA X AND THEIR LABELS Y IN X_all_image_data, Y_all_labels
 def shuffle_two_lists_together(a,b, SEED=None):
-    combined = list(zip(a, b))
     if SEED is not None:
         random.seed(SEED)
-    random.shuffle(combined)
-    a[:], b[:] = zip(*combined)
-    return a,b
+
+    #sort_order = random.sample(range(len(a)), len(a))
+
+    sort_order = list(range(0,len(a)))
+    random.shuffle(sort_order)
+
+    a_new = [a[i] for i in sort_order]
+    b_new = [b[i] for i in sort_order]
+    a_new = np.asarray(a_new)
+    b_new = np.asarray(b_new)
+    return a_new, b_new
+
+#def shuffle_two_lists_together(a,b, SEED=None):
+#    combined = list(zip(a, b))
+#    if SEED is not None:
+#        random.seed(SEED)
+#    random.shuffle(combined)
+#    a[:], b[:] = zip(*combined)
+#    return a,b
 
 def split_data(x,y,validation_split=0.2):
     split_at = int(len(x) * (1 - validation_split))
@@ -109,6 +124,7 @@ def split_data(x,y,validation_split=0.2):
 
 X_all_image_data,Y_all_labels = shuffle_two_lists_together(X_all_image_data,Y_all_labels,SEED=SHUFFLE_SEED)
 x_train,y_train,x_test,y_test = split_data(X_all_image_data,Y_all_labels,validation_split=validation_split)
+
 print("x_test:", x_train.shape)
 print("y_test:", y_train.shape)#, y_train[0:10])
 print("x_test:", x_test.shape)
@@ -233,6 +249,8 @@ history = model.fit_generator(datagen.flow(x_train, y_train, batch_size=batch_si
 
 from keras import applications
 model = applications.VGG16(include_top=False, weights='imagenet')
+from keras.utils import plot_model
+plot_model(model, to_file='model_vgg.png', show_shapes=True)
 
 # HERE WE ACTUALLY HAVE TO EDIT THE DATA OURSELF,
 # aka x *= RESCALE
@@ -263,6 +281,8 @@ model.add(Dense(num_classes, activation='sigmoid'))
 
 model.summary()
 
+plot_model(model, to_file='model_top.png', show_shapes=True)
+
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
 history = model.fit(X_bottleneck_train, y_train,
@@ -273,3 +293,69 @@ history = model.fit(X_bottleneck_train, y_train,
 
 from visualize_history import visualize_history
 visualize_history(history.history, show_also='acc', save=True, save_path='classifier3_'+str(epochs)+'epochs_')
+
+
+
+# ==============================================================================
+
+
+
+def how_many_are_in_each_category(Y):
+    unique_categories = set(Y)
+    data_by_category = {}
+    for cat in unique_categories:
+        data_by_category[cat] = []
+        for j in range(0,len(Y)):
+            if Y[j] == cat:
+                data_by_category[cat].append(Y[j])
+    for cat in unique_categories:
+        print(cat, " occured ", len(data_by_category[cat]))
+
+def convert_back_from_categorical_data(Y):
+    # manually written, rewrite
+    # turn list of values according to this
+    # (1,0,0) => 0
+    # (0,1,0) => 1
+    # (0,0,1) => 2
+    new_Y = []
+    for y in Y:
+        k = np.argmax(y)
+        new_Y.append(k)
+    return new_Y
+
+
+### Now analyze results:
+from sklearn.metrics import classification_report, confusion_matrix
+
+pred = model.predict(X_bottleneck_test, batch_size=32, verbose=1)
+#y_predicted = np.argmax(pred, axis=1)
+y_predicted = convert_back_from_categorical_data(pred)
+#y_test_label = np.argmax(y_test, axis=1)
+y_test_label = convert_back_from_categorical_data(y_test)
+# Report
+print("-------------------------------------------------------------------")
+report = classification_report(y_test_label, y_predicted)
+print(report)
+
+for i in range(0,len(classes_names)):
+    print(labels[i],"=",classes_names[i])
+
+print("Val dataset:")
+how_many_are_in_each_category(y_test_label)
+print("Train dataset had:")
+how_many_are_in_each_category(convert_back_from_categorical_data(y_train))
+
+# Confusion Matrix
+cm = confusion_matrix(y_test_label,y_predicted)
+print(cm)
+
+# Visualizing of confusion matrix
+import seaborn as sn
+import pandas  as pd
+
+df_cm = pd.DataFrame(cm, range(len(classes_names)),
+                  range(len(classes_names)))
+plt.figure(figsize = (10,7))
+sn.set(font_scale=1.4)#for label size
+sn.heatmap(df_cm, annot=True,annot_kws={"size": 12}, cmap="YlGnBu")
+plt.show()
